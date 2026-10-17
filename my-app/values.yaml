@@ -1,1 +1,18 @@
 
+replicaCount: 1
+
+image:
+  repository: my-image-name
+  tag: latest
+  pullPolicy: Never # Sangat penting untuk Docker Desktop lokal agar tidak pull dari hub online
+
+service:
+  type: NodePort
+  port: 80
+  targetPort: 80
+  nodePort: 30080
+
+ingress:
+  enabled: false
+  className: "nginx"
+  host: my-app.local
