@@ -1,4 +1,5 @@
 
+namespace: app # <-- KAMU BISA TAMBAHKAN SENDIRI DI SINI
 replicaCount: 1
 
 image:
