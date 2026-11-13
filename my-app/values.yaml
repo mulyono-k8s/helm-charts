@@ -16,4 +16,4 @@ service:
 ingress:
   enabled: false
   className: "nginx"
-  host: my-app.local
+  host: game-bouncy-hush.ngrok-free.dev
