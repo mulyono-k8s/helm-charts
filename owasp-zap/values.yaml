@@ -1,0 +1,40 @@
+# Konfigurasi Global
+namespace: security
+storageClass: "standard" # Ganti sesuai StorageClass K8s Anda (misal: gp2, hostpath)
+
+# Konfigurasi Utama OWASP ZAP Daemon
+zap:
+  image: "zaproxy/zap-stable:2.15.0"
+  replicaCount: 1
+  serviceType: NodePort
+  
+  # API Key wajib diisi agar tidak sembarang orang bisa menembak server scan Anda
+  apiKey: "ZAPSecureAPIKey2026!" 
+
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+
+  # 💾 Penyimpanan Persisten untuk menyimpan berkas laporan (.html / .json) hasil scan
+  persistence:
+    size: 5Gi
+
+# 🌐 Konfigurasi Ingress (Akses Endpoint API dari luar)
+ingress:
+  enabled: true
+  className: "nginx" # Ganti jika menggunakan controller lain (traefik, alb, dsb)
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" # Hapus/ubah jika tidak menggunakan cert-manager
+    kubernetes.io/ingress.class: "nginx"
+    # Menaikkan timeout karena proses DAST scan biasanya memakan waktu lama
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "1800"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "1800"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "1800"
+  host: "owaspzap.duckdns.org" # Ganti dengan domain aktif Anda
+  tls:
+    enabled: true
+    secretName: "zap-daemon-tls"

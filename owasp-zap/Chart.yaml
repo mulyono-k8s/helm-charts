@@ -1,0 +1,6 @@
+apiVersion: v2
+name: owasp-zap
+description: Custom Helm Chart untuk OWASP ZAP Daemon lengkap dengan PV dan Ingress
+type: application
+version: 1.0.0
+appVersion: "2.15.0" # Versi ZAP Stable teruji
