@@ -1,0 +1,22 @@
+apiVersion: kafka.strimzi.io/v1
+kind: KafkaNodePool
+metadata:
+  name: {{ .Values.nodePool.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    strimzi.io/cluster: {{ include "kafka-cluster.name" . }}
+    {{- include "kafka-cluster.labels" . | nindent 4 }}
+spec:
+  replicas: {{ .Values.nodePool.replicas }}
+  roles:
+    {{- toYaml .Values.nodePool.roles | nindent 4 }}
+  storage:
+    {{- if eq .Values.nodePool.storage.type "ephemeral" }}
+    type: ephemeral
+    {{- else }}
+    type: persistent-claim
+    size: {{ .Values.nodePool.storage.size | quote }}
+    deleteClaim: {{ .Values.nodePool.storage.deleteClaim }}
+    {{- end }}
+  resources:
+    {{- toYaml .Values.nodePool.resources | nindent 4 }}

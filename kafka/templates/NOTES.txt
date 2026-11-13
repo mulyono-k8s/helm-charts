@@ -1,0 +1,11 @@
+Kafka custom resources have been submitted to Kubernetes.
+
+Check status:
+  kubectl get kafka,kafkanodepool,pods -n {{ .Release.Namespace }}
+  kubectl get svc -n {{ .Release.Namespace }}
+
+Internal bootstrap service:
+  {{ include "kafka-cluster.name" . }}-kafka-bootstrap:{{ .Values.kafka.listener.port }}
+
+Important: the Strimzi Cluster Operator must be installed and watching this namespace first.
+The default configuration uses ephemeral storage and plaintext internal traffic for development only.

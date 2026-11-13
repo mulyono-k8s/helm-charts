@@ -1,0 +1,10 @@
+apiVersion: v2
+name: kafka-cluster
+description: Helm chart to create an Apache Kafka cluster using the Strimzi operator
+type: application
+version: 0.1.0
+appVersion: "4.2.1"
+keywords:
+  - kafka
+  - strimzi
+  - messaging
