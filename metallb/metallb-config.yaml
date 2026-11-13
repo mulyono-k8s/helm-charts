@@ -1,0 +1,18 @@
+apiVersion: metallb.io/v1beta1
+kind: IPAddressPool
+metadata:
+  name: ip-pool-lokal
+  namespace: metallb-system
+spec:
+  # MASUKKAN ALOKASI IP KOSONG DI SINI
+  addresses:
+  - 192.168.1.2-192.168.1.220 
+---
+apiVersion: metallb.io/v1beta1
+kind: L2Advertisement
+metadata:
+  name: l2-adv
+  namespace: metallb-system
+spec:
+  ipAddressPools:
+  - ip-pool-lokal
