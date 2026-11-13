@@ -1,0 +1,40 @@
+# Konfigurasi Global/Umum
+namespace: security
+storageClass: "standard" # Ganti dengan storageClass K8s Anda (misal: gp2, hostpath, premium-rwo)
+
+# 🌐 Konfigurasi Ingress (Akses Domain & HTTPS)
+ingress:
+  enabled: true
+  className: "nginx" 
+  host: "sonarqube-scan.duckdns.org" 
+  tls:
+    enabled: true
+    secretName: "sonarqube-tls-secret" 
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" 
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/proxy-body-size: "64m" # Penting untuk log laporan kode besar
+
+# Konfigurasi Utama SonarQube
+sonarqube:
+  image: "sonarqube:10.6.0-community"
+  replicaCount: 1
+  serviceType: NodePort # Tepat! Karena sudah ditangani oleh Ingress
+  resources:
+    requests:
+      cpu: "1"
+      memory: "2Gi"
+    limits:
+      cpu: "2"
+      memory: "4Gi"
+  persistence:
+    size: 10Gi
+
+# Konfigurasi Database PostgreSQL
+postgresql:
+  image: "postgres:15-alpine"
+  dbName: "sonar"
+  dbUser: "sonar"
+  dbPassword: "SonarSecureDBPassword123!" # Disarankan diganti saat production
+  persistence:
+    size: 10Gi

@@ -1,0 +1,87 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-postgres-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.postgresql.persistence.size }}
+  storageClassName: {{ .Values.storageClass }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-postgres
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-postgres
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-postgres
+    spec:
+      containers:
+        - name: postgres
+          image: {{ .Values.postgresql.image }}
+          env:
+            - name: POSTGRES_USER
+              value: {{ .Values.postgresql.dbUser | quote }}
+            - name: POSTGRES_PASSWORD
+              value: {{ .Values.postgresql.dbPassword | quote }}
+            - name: POSTGRES_DB
+              value: {{ .Values.postgresql.dbName | quote }}
+          ports:
+            - containerPort: 5432
+          volumeMounts:
+            - mountPath: /var/lib/postgresql/data
+              name: postgres-storage
+      volumes:
+        - name: postgres-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-postgres-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-postgres-svc
+  namespace: {{ .Values.namespace }}
+spec:
+  ports:
+    - port: 5432
+  selector:
+    app: {{ .Release.Name }}-postgres
+# ---
+# {{- if .Values.ingress.enabled -}}
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: {{ .Release.Name }}-sonar-ingress
+#   namespace: {{ .Values.namespace }}
+#   annotations:
+#     {{- toYaml .Values.ingress.annotations | nindent 4 }}
+# spec:
+#   ingressClassName: {{ .Values.ingress.className | quote }}
+#   {{- if .Values.ingress.tls.enabled }}
+#   tls:
+#     - hosts:
+#         - {{ .Values.ingress.host | quote }}
+#       secretName: {{ .Values.ingress.tls.secretName | quote }}
+#   {{- end }}
+#   rules:
+#     - host: {{ .Values.ingress.host | quote }}
+#       http:
+#         paths:
+#           - path: /
+#             pathType: Prefix
+#             backend:
+#               service:
+#                 name: {{ .Release.Name }}-sonar-svc
+#                 port:
+#                   number: 9000
+# {{- end }}

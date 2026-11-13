@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-sonar-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.sonarqube.persistence.size }}
+  storageClassName: {{ .Values.storageClass }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-sonar
+  namespace: {{ .Values.namespace }}
+spec:
+  replicas: {{ .Values.sonarqube.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}-sonar
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}-sonar
+    spec:
+      containers:
+        - name: sonarqube
+          image: {{ .Values.sonarqube.image }}
+          ports:
+            - containerPort: 9000
+          env:
+            - name: SONAR_JDBC_USERNAME
+              value: {{ .Values.postgresql.dbUser | quote }}
+            - name: SONAR_JDBC_PASSWORD
+              value: {{ .Values.postgresql.dbPassword | quote }}
+            - name: SONAR_JDBC_URL
+              value: "jdbc:postgresql://{{ .Release.Name }}-postgres-svc:5432/{{ .Values.postgresql.dbName }}"
+          resources:
+            {{- toYaml .Values.sonarqube.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /opt/sonarqube/data
+              name: sonar-storage
+              subPath: data
+            - mountPath: /opt/sonarqube/extensions
+              name: sonar-storage
+              subPath: extensions
+      volumes:
+        - name: sonar-storage
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-sonar-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-sonar-svc
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.sonarqube.serviceType }}
+  ports:
+    - port: 9000
+      targetPort: 9000
+      {{- if eq .Values.sonarqube.serviceType "NodePort" }}
+      nodePort: {{ .Values.sonarqube.nodePort }}
+      {{- end }}
+  selector:
+    app: {{ .Release.Name }}-sonar
+
+---
+{{- if .Values.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-sonar-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-sonar-svc
+                port:
+                  number: 9000
+{{- end }}

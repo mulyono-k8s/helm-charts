@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-sysctl-init
+  namespace: {{ .Values.namespace }}
+spec:
+  selector:
+    matchLabels:
+      app: sysctl-init
+  template:
+    metadata:
+      labels:
+        app: sysctl-init
+    spec:
+      volumes:
+      - name: sys
+        hostPath:
+          path: /sys
+      initContainers:
+      - name: sysctl
+        image: busybox:1.36
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: sys
+          mountPath: /sys
+      containers:
+      - name: pause
+        image: registry.k8s.io/pause:3.9

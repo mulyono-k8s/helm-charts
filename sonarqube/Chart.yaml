@@ -1,0 +1,6 @@
+apiVersion: v2
+name: sonarqube
+description: Custom Helm Chart lengkap untuk mendeploy SonarQube dengan PostgreSQL dan Persistent Volume
+type: application
+version: 1.0.0
+appVersion: "10.6.0" # Menggunakan versi SonarQube LTS yang stabil
