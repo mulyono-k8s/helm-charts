@@ -1,0 +1,37 @@
+# Konfigurasi Global
+namespace: security
+storageClass: "standard" # Ganti dengan storageClass Anda (misal: gp2, hostpath, dsb)
+
+# Konfigurasi Utama Trivy Server
+trivy:
+  image: "aquasec/trivy:0.50.0"
+  replicaCount: 1
+  serviceType: LoadBalancer # Diubah ke ClusterIP karena akses luar akan dilewatkan melalui Ingress
+  
+  # Token rahasia agar client/GitHub Actions Anda bisa terhubung secara aman
+  authToken: "TrivySecureToken123!" 
+
+  resources:
+    requests:
+      cpu: "500m"
+      memory: "1Gi"
+    limits:
+      cpu: "1"
+      memory: "2Gi"
+
+  # 💾 Konfigurasi Penyimpanan Persisten (Persistent Volume)
+  persistence:
+    size: 5Gi
+
+# 🌐 Konfigurasi Ingress (Akses Domain & SSL)
+ingress:
+  enabled: false
+  className: "nginx" # Ganti jika menggunakan controller lain seperti traefik, alb, dsb
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod" # Hapus/ubah baris ini jika tidak memakai cert-manager
+    kubernetes.io/ingress.class: "nginx"
+  host: "trivy.duckdns.org" # Ganti dengan domain aktif Anda
+  tls:
+    enabled: true
+    secretName: "trivy-server-tls" # Nama secret tempat menyimpan sertifikat SSL
+

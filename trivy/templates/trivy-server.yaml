@@ -1,0 +1,97 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Release.Name }}-pvc
+  namespace: {{ .Values.namespace }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.trivy.persistence.size }}
+  storageClassName: {{ .Values.storageClass }}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}
+  namespace: {{ .Values.namespace }}
+  labels:
+    app: {{ .Release.Name }}
+spec:
+  replicas: {{ .Values.trivy.replicaCount }}
+  selector:
+    matchLabels:
+      app: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: trivy-server
+          image: {{ .Values.trivy.image }}
+          args:
+            - "server"
+            - "--listen"
+            - "0.0.0.0:4954"
+          env:
+            - name: TRIVY_CACHE_DIR
+              value: "/home/trivy/.cache"
+            - name: TRIVY_AUTH_TOKEN
+              value: {{ .Values.trivy.authToken | quote }}
+          ports:
+            - containerPort: 4954
+              name: api
+          resources:
+            {{- toYaml .Values.trivy.resources | nindent 12 }}
+          volumeMounts:
+            - mountPath: /home/trivy/.cache
+              name: trivy-cache
+      volumes:
+        - name: trivy-cache
+          persistentVolumeClaim:
+            claimName: {{ .Release.Name }}-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Release.Name }}-svc
+  namespace: {{ .Values.namespace }}
+spec:
+  type: {{ .Values.trivy.serviceType }}
+  ports:
+    - port: 4954
+      targetPort: 4954
+      name: api
+  selector:
+    app: {{ .Release.Name }}
+---
+{{- if .Values.ingress.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ .Release.Name }}-ingress
+  namespace: {{ .Values.namespace }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  ingressClassName: {{ .Values.ingress.className }}
+  {{- if .Values.ingress.tls.enabled }}
+  tls:
+    - hosts:
+        - {{ .Values.ingress.host | quote }}
+      secretName: {{ .Values.ingress.tls.secretName | quote }}
+  {{- end }}
+  rules:
+    - host: {{ .Values.ingress.host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ .Release.Name }}-svc
+                port:
+                  number: 4954
+{{- end }}
