@@ -1,0 +1,25 @@
+namespace: "security"
+replicaCount: 1
+
+image:
+  repository: jenkins/jenkins
+  tag: "lts-jdk17"
+  pullPolicy: IfNotPresent
+
+service:
+  type: LoadBalancer # TETAP LOADBALANCER: Mendapat IP mandiri dari MetalLB
+  port: 8080
+  agentPort: 50000
+
+persistence:
+  enabled: true
+  storageClass: "standard" 
+  size: 20Gi
+  accessMode: ReadWriteOnce
+
+admin:
+  user: "admin"
+  password: "SuperSecretPassword123" 
+
+ingress:
+  enabled: false # UBAH INI: Matikan Ingress karena sudah pakai LoadBalancer
